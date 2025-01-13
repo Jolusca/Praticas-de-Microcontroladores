@@ -41,12 +41,12 @@ module ALU(
             4'b0110: result = A | B; // OR
             4'b0111: result = A ^ B; // XOR
             4'b1000: result = ~A; // NOT
-            default: result = 8'b00000000; // NOP
+            default: result = 8'b00010000; // NOP
         endcase
 
         // Flags
         zero_flag = (result == 8'b00000000);
-        carry_flag = (A + B > 8'b11111111); // Exemplo para adição
+        carry_flag = (A + B > 8'b11111111);
         overflow_flag = ((A[7] == B[7]) && (result[7] != A[7]));
     end
 endmodule
