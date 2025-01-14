@@ -40,7 +40,13 @@ module ALU(
             4'b0101: result = A & B; // AND
             4'b0110: result = A | B; // OR
             4'b0111: result = A ^ B; // XOR
-            4'b1000: result = ~A; // NOT
+            4'b1000: result = ~A;    // NOT
+            4'b1001: result = (A > B) ? 8'b1 : 8'b0; // Maior
+            4'b1010: result = (A >= B) ? 8'b1 : 8'b0; // Maior ou igual
+            4'b1011: result = (A < B) ? 8'b1 : 8'b0; // Menor
+            4'b1100: result = (A <= B) ? 8'b1 : 8'b0; // Menor ou igual
+            4'b1101: result = (A == B) ? 8'b1 : 8'b0; // Igual
+            4'b1110: result = (A != B) ? 8'b1 : 8'b0; // Diferente
             default: result = 8'b00010000; // NOP
         endcase
 
@@ -63,18 +69,53 @@ module Controle(
     always @(posedge clk) begin
         case (instr[7:4])
             4'b0001: begin // Instrução de soma
-                reg_addr_A <= 3'b000; // Endereço do registrador A
-                reg_addr_B <= 3'b001; // Endereço do registrador B
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
-                alu_opcode <= 4'b0000; // Opcode para soma
+                alu_opcode <= 4'b0000;
             end
             4'b0010: begin // Instrução de subtração
                 reg_addr_A <= 3'b000;
                 reg_addr_B <= 3'b001;
                 write_enable <= 0;
-                alu_opcode <= 4'b0001; // Opcode para subtração
+                alu_opcode <= 4'b0001;
             end
-            // Adicione mais casos para outras instruções
+            4'b1001: begin // Maior
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1001;
+            end
+            4'b1010: begin // Maior ou igual
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1010;
+            end
+            4'b1011: begin // Menor
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1011;
+            end
+            4'b1100: begin // Menor ou igual
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1100;
+            end
+            4'b1101: begin // Igual
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1101;
+            end
+            4'b1110: begin // Diferente
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b1110;
+            end
             default: begin
                 write_enable <= 0;
                 alu_opcode <= 4'b1111; // NOP
@@ -82,8 +123,6 @@ module Controle(
         endcase
     end
 endmodule
-
-
 
 module Processador(
     input clk,
