@@ -1,4 +1,5 @@
-module Testbench;
+module tb_Processador;
+
     reg clk;
     reg [7:0] instr;
     wire [7:0] result;
@@ -6,7 +7,7 @@ module Testbench;
     wire carry_flag;
     wire overflow_flag;
 
-    // Instância do módulo principal do processador
+    // Instanciação do módulo processador
     Processador uut (
         .clk(clk),
         .instr(instr),
@@ -16,37 +17,38 @@ module Testbench;
         .overflow_flag(overflow_flag)
     );
 
-    // Gerador de clock
-    always #5 clk = ~clk;
-
+    // Gera o clock
     initial begin
-        // Inicialização
         clk = 0;
-        instr = 8'b00010000; // NOP
-        #10;
-        
-        // Teste de instrução de soma
-        instr = 8'b00010000;
-        #10;
-        
-        // Verifica resultado da soma
-        instr = 8'b00010001;
-        #10;
-        
-        // Teste de instrução de subtração
-        instr = 8'b00100000;
-        #10;
-        
-        // Outros testes
-        instr = 8'b00100001;
-        #10;
-
-        // Finalização
-        $finish;
+        forever #5 clk = ~clk;
     end
 
-    // Monitoramento dos sinais
+    // Teste
     initial begin
-        $monitor("Time: %0t | Instr: %b | Result: %b | Zero: %b | Carry: %b | Overflow: %b", $time, instr, result, zero_flag, carry_flag, overflow_flag);
+        $display("Instrucao\tResultado\tZero Flag\tCarry Flag\tOverflow Flag");
+        
+        // Inicializando valores dos registradores para teste
+        uut.regs.regs[0] = 8'b00000101; // Valor inicial: 5
+        uut.regs.regs[1] = 8'b00000011; // Valor inicial: 3
+        
+        instr = 8'b00110000; // Multiplicação
+        #10;
+        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
+        
+        uut.regs.regs[0] = 8'b00001010; // Valor inicial: 10
+        uut.regs.regs[1] = 8'b00000010; // Valor inicial: 2
+        
+        instr = 8'b00110011; // Divisão
+        #10;
+        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
+        
+        uut.regs.regs[0] = 8'b00001011; // Valor inicial: 11
+        uut.regs.regs[1] = 8'b00000011; // Valor inicial: 3
+        
+        instr = 8'b00110100; // Módulo
+        #10;
+        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
+        
+        $finish;
     end
 endmodule
