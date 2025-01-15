@@ -1,24 +1,27 @@
 module Registradores(
     input clk,
-    input [2:0] reg_addr,
+    input [2:0] reg_addr_a,
+    input [2:0] reg_addr_b,
     input [7:0] data_in,
     input write_enable,
-    output [7:0] data_out
+    output [7:0] data_out_a,
+    output [7:0] data_out_b
 );
     reg [7:0] regs [0:2]; // 3 registradores para operações matemáticas
 
     initial begin
-        regs[0] = 8'b00000001;
-        regs[1] = 8'b00000010;
+      regs[0] = 8'b00000101;
+      regs[1] = 8'b00000011;
         regs[2] = 8'b00000000;
     end
 
     always @(posedge clk) begin
         if (write_enable)
-            regs[reg_addr] <= data_in;
+            regs[reg_addr_a] <= data_in;
     end
 
-    assign data_out = regs[reg_addr];
+    assign data_out_a = regs[reg_addr_a];
+    assign data_out_b = regs[reg_addr_b];
 endmodule
 
 module ALU(
@@ -52,7 +55,7 @@ module ALU(
 
         // Flags
         zero_flag = (result == 8'b00000000);
-        carry_flag = (A + B > 8'b11111111);
+        carry_flag = (A + B > 8'hFF);
         overflow_flag = ((A[7] == B[7]) && (result[7] != A[7]));
     end
 endmodule
@@ -79,6 +82,24 @@ module Controle(
                 reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 4'b0001;
+            end
+            4'b0011: begin // Instrução de multiplicação
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b0010;
+            end
+            4'b0100: begin // Instrução de divisão
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b0011;
+            end
+            4'b0101: begin // Instrução de módulo
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
+                write_enable <= 0;
+                alu_opcode <= 4'b0100;
             end
             4'b1001: begin // Maior
                 reg_addr_A <= 3'b000;
@@ -124,6 +145,7 @@ module Controle(
     end
 endmodule
 
+
 module Processador(
     input clk,
     input [7:0] instr,
@@ -138,20 +160,14 @@ module Processador(
     wire write_enable;
     wire [3:0] alu_opcode;
 
-    Registradores regs_A (
+    Registradores regs (
         .clk(clk),
-        .reg_addr(reg_addr_A),
+        .reg_addr_a(reg_addr_A),
+        .reg_addr_b(reg_addr_B),
         .data_in(data_in),
         .write_enable(write_enable),
-        .data_out(A)
-    );
-
-    Registradores regs_B (
-        .clk(clk),
-        .reg_addr(reg_addr_B),
-        .data_in(data_in),
-        .write_enable(write_enable),
-        .data_out(B)
+        .data_out_a(A),
+        .data_out_b(B)
     );
 
     ALU alu (
