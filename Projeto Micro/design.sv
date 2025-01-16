@@ -65,6 +65,7 @@ module ALU(
             8'b00010001: result = A; // IN (Leitura)
             8'b00010010: result = A; // OUT (Escrita)
             8'b00010011: result = 8'b0; // HALT (Parar Execução)
+            8'b00010100: result = ~A; // NOT
             default: result = 8'b11111111; // NOP
         endcase
 
@@ -203,6 +204,11 @@ module Controle(
                 reg_addr_B <= 3'b001;  // Não importa o valor
                 write_enable <= 0;     // Não há escrita
                 alu_opcode <= 8'b00010011; // HALT
+            end
+            8'b00010100: begin // NOT
+                reg_addr_A <= instr[2:0];
+                write_enalbe <= 0;
+                alu_opcode <= 8'b00010100;
             end
             default:  begin
                 write_enable <= 0;
