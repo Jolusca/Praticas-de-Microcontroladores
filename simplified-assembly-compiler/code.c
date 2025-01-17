@@ -92,6 +92,13 @@ typedef struct
   uint8_t qtdParans;
 } Instruction;
 
+void byteToBinaryString(uint8_t byte, char* str) {
+    for (int i = 7; i >= 0; --i) {
+        str[7 - i] = (byte & (1 << i)) ? '1' : '0';
+    }
+    str[8] = '\0';
+}
+
 int main ( int argc, char ** argv )
 {
   FILE * input = fopen( "input.asm", "r" ); // Ponteiro para manipulação do arquivo de entrada
@@ -101,6 +108,8 @@ int main ( int argc, char ** argv )
   uint8_t index = 0;      // Indíce para controle do buffer
   uint8_t buffer[ 100 ];    // Buffer que recebe as linha do arquivo de entrada
   uint8_t readByte[ 1 ];  // Byte para ler do arquivo de entrada
+
+  char binaryStr[9]; // Buffer para a string binária
 
   Instruction instructions[] = { 
     { .label = "ADD", .binaryCode = 0b00000000, .qtdParans = 2 }, 
@@ -153,7 +162,8 @@ int main ( int argc, char ** argv )
       {
         if ( isEqual( instructions[ i ].label, buffer ) )
         {
-          fprintf(output, "%s\n", buffer); // Escreve a instrução no arquivo de saída
+          byteToBinaryString(instructions[ i ].binaryCode, binaryStr); // Converte o código binário para string
+          fprintf(output, "%s\n", binaryStr); // Escreve a string binária no arquivo de saída
 
           for ( j = 0; j < instructions[ i ].qtdParans; j++ )
             if ( readAndSaveParam( input, output, &line, &index, buffer, readByte, instructions[ i ].label ) == 0 ) return 0;
@@ -172,11 +182,4 @@ int main ( int argc, char ** argv )
       line++; // Chegando ao fim da linha vamos para a próxima
     }
     else // Caso não seja um caractere de quebra de linha
-      buffer[ index++ ] = readByte[ 0 ]; // Armazenamos o caractere no buffer
-  }
-
-  fclose( input );  // Liberando ponteiro do arquivo de entrada
-  fclose( output ); // Liberando ponteiro do arquivo de saída
-
-  return 0;
-}
+      buffer[ index++ ] = readByte[ 0 ]; // Arma
