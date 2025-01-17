@@ -1,3 +1,4 @@
+// Code your design here
 module Registradores(
     input clk,
     input [2:0] reg_addr_a,
@@ -10,8 +11,8 @@ module Registradores(
     reg [7:0] regs [0:2]; // 3 registradores para operações matemáticas
 
     initial begin
-      regs[0] = 8'b00000101;
-      regs[1] = 8'b00000011;
+      regs[0] = 8'b00000000;
+      regs[1] = 8'b00000000;
         regs[2] = 8'b00000000;
     end
 
@@ -43,7 +44,6 @@ module ALU(
         parity_flag = 0;
         overflow_flag = 0;
 
-        // Operações baseadas no opcode
         case (opcode)
             8'b00000000: result = A + B; // ADD
             8'b00000001: result = A - B; // SUB
@@ -90,100 +90,100 @@ module Controle(
     always @(posedge clk) begin
         case (instr[7:0])
             8'b00000000: begin // ADD
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000000;
             end
             8'b00000001: begin // SUB
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000001;
             end
             8'b00000010: begin // MUL
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000010;
             end
             8'b00000011: begin // DIV
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000011;
             end
             8'b00000100: begin // MOD
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000100;
             end
             8'b00000101: begin // &&
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000101;
             end
             8'b00000110: begin // ||
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000110;
             end
             8'b00000111: begin // XOR
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00000111;
             end
             8'b00001000: begin // >
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00001000;
             end
             8'b00001001: begin // <
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00001001;
             end
             8'b00001010: begin // ==
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00001010;
             end
             8'b00001011: begin // !=
-                reg_addr_A <= instr[2:0];
-                reg_addr_B <= instr[5:3];
+                reg_addr_A <= 3'b000;
+                reg_addr_B <= 3'b001;
                 write_enable <= 0;
                 alu_opcode <= 8'b00001011;
             end
           
           8'b00001100: begin // Movimentação de dados
-                reg_addr_A <= instr[2:0];
+                reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00001100;
             end
             8'b00001101: begin // Deslocamento à esquerda
-                reg_addr_A <= instr[2:0];
+                reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00001101;
             end
             8'b00001110: begin // Deslocamento à direita
-                reg_addr_A <= instr[2:0];
+                reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00001110;
             end
             8'b00001111: begin // Manipulação de bit (inserção de 0 no LSB)
-                reg_addr_A <= instr[2:0];
+                reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00001111;
             end
             8'b00010000: begin // Manipulação de bit (inserção de 0 no MSB)
-                reg_addr_A <= instr[2:0];
+                reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00010000;
             end
@@ -206,8 +206,8 @@ module Controle(
                 alu_opcode <= 8'b00010011; // HALT
             end
             8'b00010100: begin // NOT
-                reg_addr_A <= instr[2:0];
-                write_enalbe <= 0;
+                reg_addr_A <= 3'b000;
+                write_enable <= 0;
                 alu_opcode <= 8'b00010100;
             end
             default:  begin
@@ -224,6 +224,8 @@ module Processador(
     output [7:0] result,
     output zero_flag,
     output carry_flag,
+    output sign_flag,
+    output parity_flag,
     output overflow_flag
 );
     wire [7:0] A, B;
@@ -243,12 +245,14 @@ module Processador(
     );
 
     ALU alu (
-        .A(A),
-        .B(B),
+      .A(A),
+      .B(B),
         .opcode(alu_opcode),
         .result(result),
         .zero_flag(zero_flag),
-        .carry_flag(carry_flag),
+      .carry_flag(carry_flag),
+      .sign_flag(sign_flag),
+      .parity_flag(parity_flag),
         .overflow_flag(overflow_flag)
     );
 
