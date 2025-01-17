@@ -61,7 +61,7 @@ module Testbench();
     initial begin
         i = 0;
         
-      $readmemb("output", memory);
+      $readmemb("output.txt", memory);
         
         forever begin
             if (i < $size(memory)) begin
