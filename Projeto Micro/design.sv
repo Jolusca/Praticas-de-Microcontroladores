@@ -221,7 +221,7 @@ module Controle(
                 write_enable <= 1;
                 alu_opcode <= 8'b00001111;
             end
-            8'b00010000: begin // Manipulação de bit (inserção de 0 no MSB)
+            8'b00010011: begin // Manipulação de bit (inserção de 0 no MSB)
                 reg_addr_A <= 3'b000;
                 write_enable <= 1;
                 alu_opcode <= 8'b00010000;
