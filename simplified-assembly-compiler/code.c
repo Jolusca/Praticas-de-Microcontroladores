@@ -122,7 +122,7 @@ int main ( int argc, char ** argv )
   uint8_t readByte[ 1 ];  // Byte para ler do arquivo de entrada
   uint8_t writeByte[ 1 ]; // Byte para escrever no arquivo de saída
 
-  Instruction instructions[] = { 
+Instruction instructions[] = { 
     { .label = "ADD", .binaryCode = 0b00000000, .qtdParans = 2 }, 
     { .label = "SUB", .binaryCode = 0b00000001, .qtdParans = 2 },
     { .label = "MUL", .binaryCode = 0b00000010, .qtdParans = 2 },
@@ -131,21 +131,25 @@ int main ( int argc, char ** argv )
     { .label = "AND", .binaryCode = 0b00000101, .qtdParans = 2 },
     { .label = "OR" , .binaryCode = 0b00000110, .qtdParans = 2 },
     { .label = "XOR", .binaryCode = 0b00000111, .qtdParans = 2 },
-    { .label = "NOT", .binaryCode = 0b00001000, .qtdParans = 1 },
-    { .label = "GRT", .binaryCode = 0b00001001, .qtdParans = 2 },
+ //   { .label = "NOT", .binaryCode = 0b00001000, .qtdParans = 1 },
+    { .label = "GRT", .binaryCode = 0b00001000, .qtdParans = 2 },
 //  { .label = ">=" , .binaryCode = 0b00001010, .qtdParans = 2 },
-    { .label = "LSS", .binaryCode = 0b00001011, .qtdParans = 2 },
+    { .label = "LSS", .binaryCode = 0b00001001, .qtdParans = 2 },
 //  { .label = "<=" , .binaryCode = 0b00001100, .qtdParans = 2 },
-    { .label = "EQL", .binaryCode = 0b00001101, .qtdParans = 2 },
-    { .label = "NEQ", .binaryCode = 0b00001110, .qtdParans = 2 },
-    { .label = "MOV", .binaryCode = 0b00001111, .qtdParans = 2 },
-    { .label = "SHR", .binaryCode = 0b00010000, .qtdParans = 2 },
-    { .label = "SHL", .binaryCode = 0b00010001, .qtdParans = 2 },
-    { .label = "LSB", .binaryCode = 0b00010010, .qtdParans = 2 },
-    { .label = "MSB", .binaryCode = 0b00010011, .qtdParans = 2 },
-    { .label = "IN" , .binaryCode = 0b00010100, .qtdParans = 2 },
-    { .label = "OUT", .binaryCode = 0b00010101, .qtdParans = 2 },
-    { .label ="HALT", .binaryCode = 0b00010110, .qtdParans = 2 },
+    { .label = "EQL", .binaryCode = 0b00001010, .qtdParans = 2 },
+    { .label = "NEQ", .binaryCode = 0b00001011, .qtdParans = 2 },
+    { .label = "MOV", .binaryCode = 0b00001100, .qtdParans = 2 },
+    { .label = "SHL", .binaryCode = 0b00001101, .qtdParans = 2 },
+    { .label = "SHR", .binaryCode = 0b00001110, .qtdParans = 2 },
+    { .label = "LSB", .binaryCode = 0b00001111, .qtdParans = 2 },
+    { .label = "MSB", .binaryCode = 0b00010000, .qtdParans = 2 },
+    { .label = "IN" , .binaryCode = 0b00010001, .qtdParans = 2 },
+    { .label = "OUT", .binaryCode = 0b00010010, .qtdParans = 2 },
+    { .label = "HALT", .binaryCode = 0b00010011, .qtdParans = 2 },
+    { .label = "NOT", .binaryCode = 0b00010100, .qtdParans = 1 },
+    { .label = "JMP", .binaryCode = 0b00010101, .qtdParans = 1 },
+    { .label = "RTN", .binaryCode = 0b00010110, .qtdParans = 1 },
+    { .label = "NOP", .binaryCode = 0b11111111, .qtdParans = 1 },
   };
 
   // Enquanto ouver bytes para serem lidos
