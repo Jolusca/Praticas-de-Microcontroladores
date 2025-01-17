@@ -70,33 +70,53 @@ void bufferToByte(uint8_t *buffer, uint8_t *byte) {
  * writeByte: Byte para escrita.
  * label: Instrução atual.
  */
-uint8_t readAndSaveParam(FILE *input, FILE *output, uint8_t *line, uint8_t *index, uint8_t *buffer, uint8_t *readByte, uint8_t *writeByte, char *label) {
-    for (uint8_t i = 0; i < 8; i++) {
+uint8_t readAndSaveParam (
+    FILE *input,
+    FILE *output,
+    uint8_t *line, 
+    uint8_t *index,
+    uint8_t *buffer,
+    uint8_t *readByte,
+    uint8_t *writeByte,
+    char *label
+) {
+    uint8_t i;
+    uint8_t isRegister = 0;
+
+    *index = 0;
+
+    // Lê o parâmetro do arquivo
+    for (i = 0; i < 2; i++) { // Verifica se o parâmetro é um registrador (2 caracteres, como AX)
         fread(readByte, sizeof(uint8_t), 1, input);
-        if ('0' <= readByte[0] && readByte[0] <= '9') {
+        if (readByte[0] != '\n' && *index < 100) {
             buffer[(*index)++] = readByte[0];
         } else {
-            printf("LINE: %d - ERROR: Instrução '%s' espera um número de 8 bits no formato binário.\n", *line, label);
-            return 0;
+            break;
         }
     }
 
-    fread(readByte, sizeof(uint8_t), 1, input);
-    if (readByte[0] != '\n') {
-        printf("LINE: %d - ERROR: Instrução '%s' espera um número de 8 bits no formato binário.\n", *line, label);
-        return 0;
-    } else {
-        buffer[(*index)++] = '\0';
+    buffer[*index] = '\0'; // Termina a string
+
+    // Verifica se o parâmetro é um registrador
+    for (i = 0; i < lenRegisters; i++) {
+        if (isEqual((char *)buffer, registers[i].name)) {
+            *writeByte = registers[i].code;
+            isRegister = 1;
+            break;
+        }
     }
 
-    (*line)++;
-    bufferToByte(buffer, writeByte);
+    // Se não for registrador, verifica se é um número binário
+    if (!isRegister) {
+        if (strlen((char *)buffer) != 8 || strspn((char *)buffer, "01") != 8) {
+            printf("LINE: %d - ERROR: Operando inválido para '%s'. Use um registrador ou número binário de 8 bits.\n", *line, label);
+            return 0;
+        }
 
-    char binaryString[9];
-    byteToBinaryString(*writeByte, binaryString);
-    fprintf(output, "%s\n", binaryString);
+        bufferToByte(buffer, writeByte); // Converte número binário em byte
+    }
 
-    *index = 0;
+    fwrite(writeByte, sizeof(uint8_t), 1, output); // Escreve o operando no arquivo de saída
     return 1;
 }
 
@@ -105,6 +125,21 @@ typedef struct {
     uint8_t binaryCode;
     uint8_t qtdParans;
 } Instruction;
+
+typedef struct {
+    char *name;
+    uint8_t code;
+} Register;
+
+Register registers[] = {
+    { "AX", 0b00000001 },
+    { "BX", 0b00000010 },
+    { "CX", 0b00000011 },
+    { "DX", 0b00000100 }
+};
+
+uint8_t lenRegisters = sizeof(registers) / sizeof(Register);
+
 
 int main(int argc, char **argv) {
     FILE *input = fopen("input.asm", "r");
