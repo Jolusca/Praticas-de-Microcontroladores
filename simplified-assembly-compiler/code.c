@@ -114,7 +114,7 @@ typedef struct
 int main ( int argc, char ** argv )
 {
   FILE * input = fopen( "input.asm", "r" ); // Ponteiro para manipulação do arquivo de entrada
-  FILE * output = fopen( "output", "wb" );  // Ponteiro para manipulação do arquivo de saída
+  FILE * output = fopen( "output", "w" );  // Ponteiro para manipulação do arquivo de saída
 
   uint8_t line = 1;       // Variável para controle da linha sendo processada atualmente
   uint8_t index = 0;      // Indíce para controle do buffer
@@ -204,7 +204,7 @@ Instruction instructions[] = {
   if ( index > 0 )
   {
     bufferToByte( buffer, writeByte ); // Convertemos a string para byte
-    fwrite( writeByte, sizeof( uint8_t ), 1, output ); // Escrevendo o byte no arquivo de saída
+    fprintf( writeByte, sizeof( uint8_t ), 1, output ); // Escrevendo o byte no arquivo de saída
   }
   
   fclose( input );  // Liberando ponteiro do arquivo de entrada
