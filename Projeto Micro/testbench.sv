@@ -1,54 +1,101 @@
-module tb_Processador;
-
+module Testbench();
+    // Parâmetros
     reg clk;
     reg [7:0] instr;
+    reg [7:0] operand1;
+    reg [7:0] operand2;
     wire [7:0] result;
     wire zero_flag;
     wire carry_flag;
     wire overflow_flag;
+  wire sign_flag;
+  wire parity_flag;
+    int i;
+    int operands;
 
-    // Instanciação do módulo processador
-    Processador uut (
+    // Instanciando o processador
+    Processador processador (
         .clk(clk),
         .instr(instr),
         .result(result),
         .zero_flag(zero_flag),
-        .carry_flag(carry_flag),
+      .carry_flag(carry_flag),
+      .sign_flag(sign_flag),
+      .parity_flag(parity_flag),
         .overflow_flag(overflow_flag)
     );
 
-    // Gera o clock
+    function int num_operands(input [7:0] opcode);
+        case (opcode)
+            8'b00000000: num_operands = 2; // ADD
+            8'b00000001: num_operands = 2; // SUB
+            8'b00000010: num_operands = 2; // MUL
+            8'b00000011: num_operands = 2; // DIV
+            8'b00000100: num_operands = 2; // MOD
+            8'b00000101: num_operands = 2; // AND
+            8'b00000110: num_operands = 2; // OR
+            8'b00000111: num_operands = 2; // XOR
+            8'b00001000: num_operands = 2; // >
+            8'b00001001: num_operands = 2; // <
+            8'b00001010: num_operands = 2; // ==
+            8'b00001011: num_operands = 2; // !=
+            8'b00001100: num_operands = 1; // Movimentação de dados
+            8'b00001101: num_operands = 1; // Deslocamento à esquerda
+            8'b00001110: num_operands = 1; // Deslocamento à direita
+            8'b00001111: num_operands = 1; // Manipulação de bit (inserção de 0 no LSB)
+            8'b00010000: num_operands = 1; // Manipulação de bit (inserção de 0 no MSB)
+            8'b00010001: num_operands = 1; // IN (Leitura)
+            8'b00010010: num_operands = 1; // OUT (Escrita)
+            8'b00010011: num_operands = 1; // HALT
+            8'b00010100: num_operands = 1; // NOT
+            default:     num_operands = 0; // NOP e instruções inválidas
+        endcase
+    endfunction
+
+    // Gerador de clock
     initial begin
         clk = 0;
         forever #5 clk = ~clk;
     end
 
-    // Teste
     initial begin
-        $display("Instrucao\tResultado\tZero Flag\tCarry Flag\tOverflow Flag");
+        i = 0;
         
-        // Inicializando valores dos registradores para teste
-        uut.regs.regs[0] = 8'b00000101; // Valor inicial: 5
-        uut.regs.regs[1] = 8'b00000011; // Valor inicial: 3
+      $readmemb("output", memory);
         
-        instr = 8'b00110000; // Multiplicação
-        #10;
-        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
-        
-        uut.regs.regs[0] = 8'b00001010; // Valor inicial: 10
-        uut.regs.regs[1] = 8'b00000010; // Valor inicial: 2
-        
-        instr = 8'b00110011; // Divisão
-        #10;
-        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
-        
-        uut.regs.regs[0] = 8'b00001011; // Valor inicial: 11
-        uut.regs.regs[1] = 8'b00000011; // Valor inicial: 3
-        
-        instr = 8'b00110100; // Módulo
-        #10;
-        $display("%b\t%b\t%b\t%b\t%b", instr, result, zero_flag, carry_flag, overflow_flag);
-        
-        $finish;
+        forever begin
+            if (i < $size(memory)) begin
+                instr = memory[i]; // Carrega a instrução
+                operands = num_operands(instr);
+
+                if (operands == 2) begin
+                    operand1 = memory[i+1];
+                    operand2 = memory[i+2];
+                    // Carregar operand1 e operand2 nos registradores antes da operação
+                    processador.regs.regs[0] = operand1;
+                    processador.regs.regs[1] = operand2;
+                    i = i + 3;
+                end else if (operands == 1) begin
+                    operand1 = memory[i+1];
+                    operand2 = 8'b00000000;
+                    processador.regs.regs[0] = operand1;
+                    i = i + 2;
+                end else begin
+                    operand1 = 8'b00000000;
+                    operand2 = 8'b00000000;
+                    i = i + 1;
+                end
+                #15; 
+            end else begin
+                $finish; 
+            end
+        end
+    end
+
+    reg [7:0] memory [0:255];
+
+    initial begin
+      $monitor("Tempo=%0t, Instrucao=%b, Operando1=%b, Operando2=%b, Resultado=%b, ZeroFlag=%b, CarryFlag=%b, OverflowFlag=%b, SignFlag =%b, Parity_Flag = %b",
+                 $time, instr, operand1, operand2, result, zero_flag, carry_flag, overflow_flag, sign_flag, parity_flag);
     end
 endmodule
