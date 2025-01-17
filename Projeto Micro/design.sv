@@ -1,3 +1,4 @@
+
 // Code your design here
 module Registradores(
     input clk,
@@ -78,14 +79,52 @@ module ALU(
     end
 endmodule
 
+module Pilha(
+    input clk,
+    input push,
+    input pop,
+    input [7:0] data_in,
+    output reg [7:0] data_out,
+    output reg empty,
+    output reg full
+);
+    reg [7:0] stack [0:7]; // Pilha de 8 níveis
+    reg [2:0] sp; // Ponteiro da pilha
+
+    initial begin
+        sp = 3'b000;
+        empty = 1;
+        full = 0;
+    end
+
+    always @(posedge clk) begin
+        if (push && !full) begin
+            stack[sp] <= data_in;
+            sp <= sp + 1;
+            empty <= 0;
+            if (sp == 3'b111) full <= 1;
+        end else if (pop && !empty) begin
+            sp <= sp - 1;
+            data_out <= stack[sp];
+            full <= 0;
+            if (sp == 3'b000) empty <= 1;
+        end
+    end
+endmodule
+
+
 module Controle(
-    input clk, 
-    input [7: 0] instr, 
-    output reg [2: 0] reg_addr_A, 
-    output reg [2: 0] reg_addr_B, 
-    output reg [7: 0] data_in, 
-    output reg write_enable, 
-    output reg [7: 0] alu_opcode
+    input clk,
+    input [7:0] instr,
+    output reg [2:0] reg_addr_A,
+    output reg [2:0] reg_addr_B,
+    output reg [7:0] data_in,
+    output reg write_enable,
+    output reg [7:0] alu_opcode,
+    output reg [7:0] pc, // Contador de programa (Program Counter)
+    output reg stack_push,
+    output reg stack_pop,
+    input [7:0] stack_data_out
 );
     always @(posedge clk) begin
         case (instr[7:0])
@@ -187,7 +226,7 @@ module Controle(
                 write_enable <= 1;
                 alu_opcode <= 8'b00010000;
             end
-                        8'b00010001: begin // IN (Leitura)
+            8'b00010001: begin // IN (Leitura)
                 reg_addr_A <= 3'b000;  // Registra em A
                 reg_addr_B <= 3'b001;  // Não importa o B
                 write_enable <= 0;     //Não há necessidade de escrita
@@ -199,16 +238,24 @@ module Controle(
                 write_enable <= 1;     // Habilita escrita
                 alu_opcode <= 8'b00010010; // Instrução de escrita
             end
-            8'b00010011:  begin // HALT (Parar Execução)
-                reg_addr_A <= 3'b000;  // Não importa o valor
-                reg_addr_B <= 3'b001;  // Não importa o valor
-                write_enable <= 0;     // Não há escrita
-                alu_opcode <= 8'b00010011; // HALT
+            8'b00010011: begin // HALT (Parar Execução)
+                stack_push <= 1;
+                data_in <= pc + 1; // Salva o endereço da próxima instrução
+                pc <= 8'b11111111; // Salta para a última linha (0xFF)
             end
             8'b00010100: begin // NOT
                 reg_addr_A <= 3'b000;
                 write_enable <= 0;
                 alu_opcode <= 8'b00010100;
+            end
+            8'b00010101: begin // JUMP
+                stack_push <= 1;
+                data_in <= pc + 1; // Endereço da próxima instrução
+                pc <= instr[2:0]; // Salta para o endereço especificado
+            end
+            8'b00010110: begin // RETURN
+                stack_pop <= 1;
+                pc <= stack_data_out; // Retorna ao endereço armazenado na pilha
             end
             default:  begin
                 write_enable <= 0;
@@ -232,7 +279,10 @@ module Processador(
     wire [2:0] reg_addr_A, reg_addr_B;
     wire [7:0] data_in;
     wire write_enable;
-  wire [7:0] alu_opcode;
+    wire [7:0] alu_opcode;
+    wire [7:0] pc;
+    wire stack_push, stack_pop;
+    wire [7:0] stack_data_out;
 
     Registradores regs (
         .clk(clk),
@@ -245,14 +295,14 @@ module Processador(
     );
 
     ALU alu (
-      .A(A),
-      .B(B),
+        .A(A),
+        .B(B),
         .opcode(alu_opcode),
         .result(result),
         .zero_flag(zero_flag),
-      .carry_flag(carry_flag),
-      .sign_flag(sign_flag),
-      .parity_flag(parity_flag),
+        .carry_flag(carry_flag),
+        .sign_flag(sign_flag),
+        .parity_flag(parity_flag),
         .overflow_flag(overflow_flag)
     );
 
@@ -263,6 +313,20 @@ module Processador(
         .reg_addr_B(reg_addr_B),
         .data_in(data_in),
         .write_enable(write_enable),
-        .alu_opcode(alu_opcode)
+        .alu_opcode(alu_opcode),
+        .pc(pc),
+        .stack_push(stack_push),
+        .stack_pop(stack_pop),
+        .stack_data_out(stack_data_out)
+    );
+
+    Pilha stack (
+        .clk(clk),
+        .push(stack_push),
+        .pop(stack_pop),
+        .data_in(data_in),
+        .data_out(stack_data_out),
+        .empty(),
+        .full()
     );
 endmodule
