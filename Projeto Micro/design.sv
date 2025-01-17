@@ -112,9 +112,9 @@ module Pilha(
     end
 endmodule
 
-
 module Controle(
     input clk,
+    input reset,
     input [7:0] instr,
     output reg [2:0] reg_addr_A,
     output reg [2:0] reg_addr_B,
@@ -126,140 +126,148 @@ module Controle(
     output reg stack_pop,
     input [7:0] stack_data_out
 );
-    always @(posedge clk) begin
-        case (instr[7:0])
-            8'b00000000: begin // ADD
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000000;
+    // Definição de estados
+    typedef enum reg [2:0] {
+        FETCH = 3'b000,
+        DECODE = 3'b001,
+        EXECUTE = 3'b010,
+        WRITE_BACK = 3'b011,
+        HALT = 3'b100
+    } state_t;
+
+    reg state, next_state;
+
+    // Inicialização
+    initial begin
+        state = FETCH;
+        pc = 8'b0;
+    end
+
+    // Transições de estado
+    always @(posedge clk or posedge reset) begin
+        if (reset)
+            state <= FETCH; // Reinicia no estado de busca
+        else
+            state <= next_state;
+    end
+
+    // Lógica de transição e saída
+    always @(*) begin
+        // Valores padrão para evitar latch
+        reg_addr_A = 3'b000;
+        reg_addr_B = 3'b001;
+        write_enable = 0;
+        alu_opcode = 8'b11111111; // NOP
+        stack_push = 0;
+        stack_pop = 0;
+        data_in = 8'b0;
+
+        case (state)
+            FETCH: begin
+                next_state = DECODE; // Busca a próxima instrução
             end
-            8'b00000001: begin // SUB
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000001;
+
+            DECODE: begin
+                case (instr)
+                    8'b00000000: begin // ADD
+                        alu_opcode = 8'b00000000;
+                    end
+                    8'b00000001: begin // SUB
+                        alu_opcode = 8'b00000001;
+                    end
+                    8'b00000010: begin // MUL
+                        alu_opcode = 8'b00000010;
+                    end
+                    8'b00000011: begin // DIV
+                        alu_opcode = 8'b00000011;
+                    end
+                    8'b00000100: begin // MOD
+                        alu_opcode = 8'b00000100;
+                    end
+                    8'b00000101: begin // AND
+                        alu_opcode = 8'b00000101;
+                    end
+                    8'b00000110: begin // OR
+                        alu_opcode = 8'b00000110;
+                    end
+                    8'b00000111: begin // XOR
+                        alu_opcode = 8'b00000111;
+                    end
+                    8'b00001000: begin // GT
+                        alu_opcode = 8'b00001000;
+                    end
+                    8'b00001001: begin // LT
+                        alu_opcode = 8'b00001001;
+                    end
+                    8'b00001010: begin // EQ
+                        alu_opcode = 8'b00001010;
+                    end
+                    8'b00001011: begin // NEQ
+                        alu_opcode = 8'b00001011;
+                    end
+                    8'b00001100: begin // MOV
+                        write_enable = 1;
+                        alu_opcode = 8'b00001100;
+                    end
+                    8'b00001101: begin // SHL
+                        reg_addr_A = 3'b000;
+                        alu_opcode = 8'b00001101;
+                    end
+                    8'b00001110: begin // SHR
+                        alu_opcode = 8'b00001110;
+                    end
+                    8'b00001111: begin // SET_LSB
+                        alu_opcode = 8'b00001111;
+                    end
+                    8'b00010000: begin // SET_MSB
+                        alu_opcode = 8'b00010000;
+                    end
+                    8'b00010001: begin // IN
+                        alu_opcode = 8'b00010001;
+                    end
+                    8'b00010010: begin // OUT
+                        write_enable = 1;
+                        alu_opcode = 8'b00010010;
+                    end
+                    8'b00010011: begin // HALT
+                        next_state = HALT;
+                    end
+                    8'b00010100: begin // NOT
+                        alu_opcode = 8'b00010100;
+                    end
+                    8'b00010101: begin // JUMP
+                        stack_push = 1;
+                        data_in = pc + 1;
+                        pc = instr[2:0];
+                    end
+                    8'b00010110: begin // RETURN
+                        stack_pop = 1;
+                        pc = stack_data_out;
+                    end
+                    default: begin
+                        alu_opcode = 8'b11111111; // NOP
+                    end
+                endcase
+                next_state = EXECUTE;
             end
-            8'b00000010: begin // MUL
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000010;
+
+            EXECUTE: begin
+                next_state = WRITE_BACK;
             end
-            8'b00000011: begin // DIV
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000011;
+
+            WRITE_BACK: begin
+                if (instr[7:0] < 8'b00001100) // Operações que escrevem
+                    write_enable = 1;
+                next_state = FETCH;
+                pc = pc + 1;
             end
-            8'b00000100: begin // MOD
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000100;
+
+            HALT: begin
+                next_state = HALT; // Estado de parada
             end
-            8'b00000101: begin // &&
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000101;
-            end
-            8'b00000110: begin // ||
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000110;
-            end
-            8'b00000111: begin // XOR
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00000111;
-            end
-            8'b00001000: begin // >
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00001000;
-            end
-            8'b00001001: begin // <
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00001001;
-            end
-            8'b00001010: begin // ==
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00001010;
-            end
-            8'b00001011: begin // !=
-                reg_addr_A <= 3'b000;
-                reg_addr_B <= 3'b001;
-                write_enable <= 0;
-                alu_opcode <= 8'b00001011;
-            end
-          
-          8'b00001100: begin // Movimentação de dados
-                reg_addr_A <= 3'b000;
-                write_enable <= 1;
-                alu_opcode <= 8'b00001100;
-            end
-            8'b00001101: begin // Deslocamento à esquerda
-                reg_addr_A <= 3'b000;
-                write_enable <= 1;
-                alu_opcode <= 8'b00001101;
-            end
-            8'b00001110: begin // Deslocamento à direita
-                reg_addr_A <= 3'b000;
-                write_enable <= 1;
-                alu_opcode <= 8'b00001110;
-            end
-            8'b00001111: begin // Manipulação de bit (inserção de 0 no LSB)
-                reg_addr_A <= 3'b000;
-                write_enable <= 1;
-                alu_opcode <= 8'b00001111;
-            end
-            8'b00010011: begin // Manipulação de bit (inserção de 0 no MSB)
-                reg_addr_A <= 3'b000;
-                write_enable <= 1;
-                alu_opcode <= 8'b00010000;
-            end
-            8'b00010001: begin // IN (Leitura)
-                reg_addr_A <= 3'b000;  // Registra em A
-                reg_addr_B <= 3'b001;  // Não importa o B
-                write_enable <= 0;     //Não há necessidade de escrita
-                alu_opcode <= 8'b00010001; // Instrução de leitura
-            end
-            8'b00010010: begin // OUT (Escrita)
-                reg_addr_A <= 3'b000;  // Registra em A
-                reg_addr_B <= 3'b001;  // Não importa o B
-                write_enable <= 1;     // Habilita escrita
-                alu_opcode <= 8'b00010010; // Instrução de escrita
-            end
-            8'b00010011: begin // HALT (Parar Execução)
-                stack_push <= 1;
-                data_in <= pc + 1; // Salva o endereço da próxima instrução
-                pc <= 8'b11111111; // Salta para a última linha (0xFF)
-            end
-            8'b00010100: begin // NOT
-                reg_addr_A <= 3'b000;
-                write_enable <= 0;
-                alu_opcode <= 8'b00010100;
-            end
-            8'b00010101: begin // JUMP
-                stack_push <= 1;
-                data_in <= pc + 1; // Endereço da próxima instrução
-                pc <= instr[2:0]; // Salta para o endereço especificado
-            end
-            8'b00010110: begin // RETURN
-                stack_pop <= 1;
-                pc <= stack_data_out; // Retorna ao endereço armazenado na pilha
-            end
-            default:  begin
-                write_enable <= 0;
-                alu_opcode <= 8'b11111111; // NOP
+
+            default: begin
+                next_state = FETCH;
             end
         endcase
     end
