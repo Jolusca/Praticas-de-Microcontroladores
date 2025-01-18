@@ -1,9 +1,10 @@
 module Testbench();
     // Parâmetros
     reg clk;
+  reg reset;
     reg [7:0] instr;
-    reg [7:0] operand1;
-    reg [7:0] operand2;
+  reg [7:0] instr_src;
+  reg [7:0] instr_dest;
     wire [7:0] result;
     wire zero_flag;
     wire carry_flag;
@@ -16,7 +17,10 @@ module Testbench();
     // Instanciando o processador
     Processador processador (
         .clk(clk),
-        .instr(instr),
+      .reset(reset),
+      .instr(instr),
+      .instr_dest(instr_dest),
+      .instr_src(instr_src),
         .result(result),
         .zero_flag(zero_flag),
       .carry_flag(carry_flag),
@@ -39,7 +43,7 @@ module Testbench();
             8'b00001001: num_operands = 2; // <
             8'b00001010: num_operands = 2; // ==
             8'b00001011: num_operands = 2; // !=
-            8'b00001100: num_operands = 1; // Movimentação de dados
+            8'b00001100: num_operands = 2; // MOV
             8'b00001101: num_operands = 1; // Deslocamento à esquerda
             8'b00001110: num_operands = 1; // Deslocamento à direita
             8'b00001111: num_operands = 1; // Manipulação de bit (inserção de 0 no LSB)
@@ -59,33 +63,37 @@ module Testbench();
     end
 
     initial begin
+      reset = 1;       // Ativa o reset
+        #15;            
+        reset = 0;
         i = 0;
         
-      $readmemb("output.txt", memory);
+      $readmemb("test.bin", memory);
         
         forever begin
             if (i < $size(memory)) begin
                 instr = memory[i]; // Carrega a instrução
                 operands = num_operands(instr);
+              
+              if (instr == 8'b00010101) begin // Caso seja um JUMP
+                instr_dest = 8'b00000000; 
+                instr_src = memory[i+1]; 
+                i = instr_src;           
 
-                if (operands == 2) begin
-                    operand1 = memory[i+1];
-                    operand2 = memory[i+2];
-                    // Carregar operand1 e operand2 nos registradores antes da operação
-                    processador.regs.regs[0] = operand1;
-                    processador.regs.regs[1] = operand2;
+                end else if (operands == 2) begin
+                    instr_dest = memory[i+1];
+                    instr_src = memory[i+2];
                     i = i + 3;
                 end else if (operands == 1) begin
-                    operand1 = memory[i+1];
-                    operand2 = 8'b00000000;
-                    processador.regs.regs[0] = operand1;
+                    instr_dest = memory[i+1];
+                    instr_src = 8'b00000000;
                     i = i + 2;
                 end else begin
-                    operand1 = 8'b00000000;
-                    operand2 = 8'b00000000;
+                    instr_dest = 8'b00000000;
+                    instr_src = 8'b00000000;
                     i = i + 1;
                 end
-                #15; 
+                #20; 
             end else begin
                 $finish; 
             end
@@ -93,9 +101,13 @@ module Testbench();
     end
 
     reg [7:0] memory [0:255];
+  
+
 
     initial begin
       $monitor("Tempo=%0t, Instrucao=%b, Operando1=%b, Operando2=%b, Resultado=%b, ZeroFlag=%b, CarryFlag=%b, OverflowFlag=%b, SignFlag =%b, Parity_Flag = %b",
-                 $time, instr, operand1, operand2, result, zero_flag, carry_flag, overflow_flag, sign_flag, parity_flag);
+                 $time, instr, instr_dest, instr_src, result, zero_flag, carry_flag, overflow_flag, sign_flag, parity_flag);
     end
+  
+
 endmodule
