@@ -9,12 +9,18 @@ module Registradores(
     output [7:0] data_out_a,
     output [7:0] data_out_b
 );
-    reg [7:0] regs [0:2]; // 3 registradores para operações matemáticas
+  reg [7:0] regs [0:7]; // 8 registradores: AX, BX, CX, DX e mais 4 para expansão futura
 
+    // Inicialização dos registradores
     initial begin
-      regs[0] = 8'b00000000;
-      regs[1] = 8'b00000000;
-        regs[2] = 8'b00000000;
+      regs[0] = 8'b00000000; // AX
+      regs[1] = 8'b00000000; // BX
+        regs[2] = 8'b00000000; // CX
+        regs[3] = 8'b00000000; // DX
+        regs[4] = 8'b00000000; // Extra 1
+        regs[5] = 8'b00000000; // Extra 2
+        regs[6] = 8'b00000000; // Extra 3
+        regs[7] = 8'b00000000; // Extra 4
     end
 
     always @(posedge clk) begin
@@ -58,7 +64,6 @@ module ALU(
             8'b00001001: result = (A < B) ? 8'b1 : 8'b0; // <
             8'b00001010: result = (A == B) ? 8'b1 : 8'b0; // ==
             8'b00001011: result = (A != B) ? 8'b1 : 8'b0; // !=
-            8'b00001100: result = A; // Movimentação de dados
             8'b00001101: result = A << 1; // Deslocamento à esquerda
             8'b00001110: result = A >> 1; // Deslocamento à direita
             8'b00001111: result = {A[6:0], 1'b0}; // Manipulação de bit: inserção de 0 no LSB
@@ -69,6 +74,7 @@ module ALU(
             8'b00010100: result = ~A; // NOT
             default: result = 8'b11111111; // NOP
         endcase
+      
 
         // Flags
         zero_flag = (result == 8'b00000000); // Zero Flag
@@ -116,6 +122,9 @@ module Controle(
     input clk,
     input reset,
     input [7:0] instr,
+    input [7:0] instr_dest,     // Registrador de destino
+    input [7:0] instr_src,
+  input [7:0] result,
     output reg [2:0] reg_addr_A,
     output reg [2:0] reg_addr_B,
     output reg [7:0] data_in,
@@ -145,15 +154,33 @@ module Controle(
 
     // Transições de estado
     always @(posedge clk or posedge reset) begin
-        if (reset)
-            state <= FETCH; // Reinicia no estado de busca
-        else
-            state <= next_state;
+    if (reset) begin
+        state <= FETCH;
+    end else begin
+        state <= next_state;
     end
+end
+  
+  always @(posedge clk) begin // Armazena o resultado da operação no registrador destino
+    if ((instr == 8'b00000000) || // ADD
+        (instr == 8'b00000001) || // SUB
+        (instr == 8'b00000010) || // MUL
+        (instr == 8'b00000011) || // DIV
+        (instr == 8'b00000100) || // MOD
+        (instr == 8'b00000101) || // AND
+        (instr == 8'b00000110) || // OR
+        (instr == 8'b00000111) || // XOR
+        (instr == 8'b00001101) || // Deslocamento à esquerda
+        (instr == 8'b00001110))   // Deslocamento à direita
+    begin
+        reg_addr_A = instr_dest[2:0];
+        data_in = result;    
+        write_enable = 1;
+    end
+end
 
     // Lógica de transição e saída
-    always @(*) begin
-        // Valores padrão para evitar latch
+  always @(*) begin
         reg_addr_A = 3'b000;
         reg_addr_B = 3'b001;
         write_enable = 0;
@@ -170,27 +197,43 @@ module Controle(
             DECODE: begin
                 case (instr)
                     8'b00000000: begin // ADD
+                        reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000000;
                     end
                     8'b00000001: begin // SUB
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000001;
                     end
                     8'b00000010: begin // MUL
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000010;
                     end
                     8'b00000011: begin // DIV
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000011;
                     end
                     8'b00000100: begin // MOD
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000100;
                     end
                     8'b00000101: begin // AND
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000101;
                     end
                     8'b00000110: begin // OR
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000110;
                     end
                     8'b00000111: begin // XOR
+                      reg_addr_A <= instr_dest[2:0]; // Registrador de destino
+                        reg_addr_B <= instr_src[2:0];
                         alu_opcode = 8'b00000111;
                     end
                     8'b00001000: begin // GT
@@ -206,14 +249,16 @@ module Controle(
                         alu_opcode = 8'b00001011;
                     end
                     8'b00001100: begin // MOV
+                      reg_addr_A <= instr_dest[2:0];
+                        data_in <= instr_src; 
                         write_enable = 1;
-                        alu_opcode = 8'b00001100;
                     end
                     8'b00001101: begin // SHL
-                        reg_addr_A = 3'b000;
+                      reg_addr_A <= instr_dest[2:0];
                         alu_opcode = 8'b00001101;
                     end
                     8'b00001110: begin // SHR
+                      reg_addr_A <= instr_dest[2:0];
                         alu_opcode = 8'b00001110;
                     end
                     8'b00001111: begin // SET_LSB
@@ -238,28 +283,19 @@ module Controle(
                     8'b00010101: begin // JUMP
                         stack_push = 1;
                         data_in = pc + 1;
-                        pc = instr[2:0];
+                        pc = instr_src;
                     end
                     8'b00010110: begin // RETURN
                         stack_pop = 1;
                         pc = stack_data_out;
                     end
-                    default: begin
-                        alu_opcode = 8'b11111111; // NOP
-                    end
+                    default: alu_opcode = 8'b11111111; // NOP
                 endcase
                 next_state = EXECUTE;
             end
 
             EXECUTE: begin
                 next_state = WRITE_BACK;
-            end
-
-            WRITE_BACK: begin
-                if (instr[7:0] < 8'b00001100) // Operações que escrevem
-                    write_enable = 1;
-                next_state = FETCH;
-                pc = pc + 1;
             end
 
             HALT: begin
@@ -275,7 +311,10 @@ endmodule
 
 module Processador(
     input clk,
+  input reset,
     input [7:0] instr,
+  input [7:0] instr_dest,
+    input [7:0] instr_src,
     output [7:0] result,
     output zero_flag,
     output carry_flag,
@@ -316,7 +355,11 @@ module Processador(
 
     Controle ctrl (
         .clk(clk),
+      .reset(reset),
         .instr(instr),
+      .result(result),
+      .instr_dest(instr_dest),
+        .instr_src(instr_src),
         .reg_addr_A(reg_addr_A),
         .reg_addr_B(reg_addr_B),
         .data_in(data_in),
