@@ -68,7 +68,7 @@ module Testbench();
         reset = 0;
         i = 0;
         
-      $readmemb("test.bin", memory);
+      $readmemb("jump.bin", memory);
         
         forever begin
             if (i < $size(memory)) begin
@@ -76,10 +76,13 @@ module Testbench();
                 operands = num_operands(instr);
               
               if (instr == 8'b00010101) begin // Caso seja um JUMP
-                instr_dest = 8'b00000000; 
-                instr_src = memory[i+1]; 
-                i = instr_src;           
-
+                    instr_dest = 8'b00000000;
+                    instr_src = memory[i + 1]; // Endereço de destino
+                    i = instr_src; // Salta para o endereço especificado          
+              end else if (instr == 8'b00010110) begin // RETURN
+                    instr_dest = 8'b00000000;
+                    instr_src = 8'b00000000;
+                    i = processador.ctrl.stack_data_out; // Recupera o endereço da pilha
                 end else if (operands == 2) begin
                     instr_dest = memory[i+1];
                     instr_src = memory[i+2];
@@ -108,6 +111,5 @@ module Testbench();
       $monitor("Tempo=%0t, Instrucao=%b, Operando1=%b, Operando2=%b, Resultado=%b, ZeroFlag=%b, CarryFlag=%b, OverflowFlag=%b, SignFlag =%b, Parity_Flag = %b",
                  $time, instr, instr_dest, instr_src, result, zero_flag, carry_flag, overflow_flag, sign_flag, parity_flag);
     end
-  
 
 endmodule
