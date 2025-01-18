@@ -101,19 +101,20 @@ module Pilha(
         sp = 3'b000;
         empty = 1;
         full = 0;
+        data_out = 8'b0;
     end
 
     always @(posedge clk) begin
         if (push && !full) begin
-            stack[sp] <= data_in;
+            stack[sp] <= data_in; // Escreve no topo da pilha
             sp <= sp + 1;
             empty <= 0;
-            if (sp == 3'b111) full <= 1;
+            if (sp == 3'b111) full <= 1; // Pilha cheia
         end else if (pop && !empty) begin
             sp <= sp - 1;
-            data_out <= stack[sp];
+            data_out <= stack[sp - 1]; // Lê o valor atual do topo
             full <= 0;
-            if (sp == 3'b000) empty <= 1;
+            if (sp == 3'b001) empty <= 1; // Pilha vazia
         end
     end
 endmodule
@@ -192,6 +193,7 @@ end
         case (state)
             FETCH: begin
                 next_state = DECODE; // Busca a próxima instrução
+              pc = pc + 1;
             end
 
             DECODE: begin
@@ -284,10 +286,13 @@ end
                         stack_push = 1;
                         data_in = pc + 1;
                         pc = instr_src;
+                      next_state = FETCH;
                     end
                     8'b00010110: begin // RETURN
                         stack_pop = 1;
+                      stack_push = 0;
                         pc = stack_data_out;
+                      next_state = FETCH;
                     end
                     default: alu_opcode = 8'b11111111; // NOP
                 endcase
