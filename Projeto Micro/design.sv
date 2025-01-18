@@ -13,14 +13,14 @@ module Registradores(
 
     // Inicialização dos registradores
     initial begin
-      regs[0] = 8'b00000000; // AX
-      regs[1] = 8'b00000000; // BX
-        regs[2] = 8'b00000000; // CX
-        regs[3] = 8'b00000000; // DX
-        regs[4] = 8'b00000000; // Extra 1
-        regs[5] = 8'b00000000; // Extra 2
-        regs[6] = 8'b00000000; // Extra 3
-        regs[7] = 8'b00000000; // Extra 4
+      regs[0] = 8'b00000000; // 0
+      regs[1] = 8'b00000000; // AX
+      regs[2] = 8'b00000000; // BX
+      regs[3] = 8'b00000000; // CX
+      regs[4] = 8'b00000000; // DX
+      regs[5] = 8'b00000000; // Reg extra
+        regs[6] = 8'b00000000; // Reg extra
+        regs[7] = 8'b00000000; // Reg extra
     end
 
     always @(posedge clk) begin
